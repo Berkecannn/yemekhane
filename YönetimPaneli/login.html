@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT. Yönetim - Giriş</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Darker+Grotesque:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #000000; --text-muted: #6c757d;
+            --primary: #f05800; --primary-hover: #cc4a00; --border-color: #dee2e6; --danger: #dc3545; --success: #28a745;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg-color: #121212; --card-bg: #1e1e1e; --text-main: #ffffff; --text-muted: #aaaaaa; --border-color: #333333; }
+        }
+        body { font-family: 'Darker Grotesque', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        
+        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
+        .logo { font-size: 42px; font-weight: 900; letter-spacing: -1px; margin: 0 0 20px 0; text-align: center; }
+        .logo span { color: var(--primary); }
+        .hidden { display: none !important; }
+        
+        .auth-tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; }
+        .auth-tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; font-weight: bold; color: var(--text-muted); font-size: 18px; }
+        .auth-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); margin-bottom: -2px; }
+
+        label { display: block; font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-muted); }
+        input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--bg-color); color: var(--text-main); font-family: 'Darker Grotesque', sans-serif; font-size: 18px; font-weight: 700; box-sizing: border-box; margin-bottom: 15px; }
+        
+        /* ŞİFRE KUTUSU TASARIMI - DÜZELTİLDİ */
+        .password-container { display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--bg-color); margin-bottom: 15px; overflow: hidden; }
+        .password-container input { border: none; margin-bottom: 0; border-radius: 0; flex: 1; outline: none; background: transparent; }
+        
+        /* Göz ikonunun global buton kurallarından etkilenmemesi için !important eklendi */
+        .toggle-btn { background: transparent !important; border: none; color: var(--text-muted); font-size: 24px; padding: 0 15px !important; cursor: pointer; display: flex; align-items: center; justify-content: center; width: auto !important; margin: 0; }
+        .toggle-btn:hover { background-color: transparent !important; color: var(--primary) !important; }
+        .toggle-btn ion-icon { pointer-events: none; }
+
+        button { background-color: var(--primary); color: white; border: none; padding: 12px 24px; font-size: 18px; font-weight: 700; border-radius: 6px; cursor: pointer; font-family: 'Darker Grotesque', sans-serif; transition: 0.2s; width: 100%; margin-top: 5px; }
+        button:hover { background-color: var(--primary-hover); }
+        .msg { text-align: center; margin-top: 15px; font-size: 16px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1 class="logo">YT<span>.</span> Admin</h1>
+        
+        <div class="auth-tabs">
+            <div class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Giriş Yap</div>
+            <div class="auth-tab" id="tabRegister" onclick="switchTab('register')">Kurum Kaydı</div>
+        </div>
+
+        <div id="loginForm">
+            <label>Kullanıcı Adı</label>
+            <input type="text" id="loginUsername" placeholder="Yönetici kullanıcı adı">
+            
+            <label>Şifre</label>
+            <div class="password-container">
+                <input type="password" id="loginPassword" placeholder="******">
+                <button type="button" class="toggle-btn" onclick="togglePassword('loginPassword', 'loginEyeIcon')">
+                    <ion-icon id="loginEyeIcon" name="eye-off"></ion-icon>
+                </button>
+            </div>
+            
+            <button onclick="handleLogin()">Sisteme Gir</button>
+        </div>
+
+        <div id="registerForm" class="hidden">
+            <label>Üniversite Adı (Çok Önemli)</label>
+            <label>Üniversite Adı</label>
+            <select id="regUniversity" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--bg-color); color: var(--text-main); font-family: 'Darker Grotesque', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 15px; cursor: pointer;">
+                <option value="">-- Üniversitenizi Seçin --</option>
+                <option value="Kocaeli Üniversitesi">Kocaeli Üniversitesi</option>
+                <option value="Kocaeli Üniversitesi">Yalova Üniversitesi</option>
+                <option value="Zonguldak Bülent Ecevit Üniversitesi">Zonguldak Bülent Ecevit Üniversitesi</option>
+                <option value="İstanbul Teknik Üniversitesi">İstanbul Teknik Üniversitesi</option>
+                <option value="Ankara Üniversitesi">Ankara Üniversitesi</option>
+                <option value="Ege Üniversitesi">Ege Üniversitesi</option>
+            </select>
+            <label>Yönetici Ad Soyad</label>
+            <input type="text" id="regFullName" placeholder="Ad Soyad">
+            <label>Kullanıcı Adı</label>
+            <input type="text" id="regUsername" placeholder="Sisteme giriş için">
+            
+            <label>Şifre</label>
+            <div class="password-container">
+                <input type="password" id="regPassword" placeholder="Güçlü bir şifre">
+                <button type="button" class="toggle-btn" onclick="togglePassword('regPassword', 'regEyeIcon')">
+                    <ion-icon id="regEyeIcon" name="eye-off"></ion-icon>
+                </button>
+            </div>
+
+            <button onclick="handleRegister()">Kurumu Kaydet</button>
+        </div>
+        
+        <p class="msg" id="authMessage"></p>
+    </div>
+
+<script>
+    const API_BASE_URL = 'http://localhost:5260/api';
+
+    // Sekme açıldığında oturum varsa direkt admin'e at
+    if (sessionStorage.getItem("adminData")) {
+        window.location.replace("admin.html");
+    }
+
+    function switchTab(tab) {
+        document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+        document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+        document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+        document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+        document.getElementById('authMessage').innerText = "";
+    }
+
+    function togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        
+        if (input.type === "password") {
+            input.type = "text";
+            icon.setAttribute("name", "eye"); 
+        } else {
+            input.type = "password";
+            icon.setAttribute("name", "eye-off"); 
+        }
+    }
+
+    function showMsg(text, isError = false) {
+        const el = document.getElementById('authMessage');
+        el.innerText = text; el.style.color = isError ? "var(--danger)" : "var(--success)";
+    }
+
+    function handleRegister() {
+        const uni = document.getElementById('regUniversity').value.trim();
+        const fname = document.getElementById('regFullName').value.trim();
+        const uname = document.getElementById('regUsername').value.trim();
+        const pass = document.getElementById('regPassword').value;
+
+        if (!uni || !fname || !uname || !pass) return showMsg("Tüm alanları doldurun!", true);
+
+        fetch(`${API_BASE_URL}/adminauth/register`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            body: JSON.stringify({ universityName: uni, fullName: fname, username: uname, password: pass })
+        })
+        .then(async res => {
+            const data = await res.json(); if (!res.ok) throw new Error(data.mesaj);
+            showMsg("Kayıt başarılı! Giriş yapabilirsiniz.");
+            switchTab('login');
+        }).catch(err => showMsg(err.message, true));
+    }
+
+    function handleLogin() {
+        const uname = document.getElementById('loginUsername').value.trim();
+        const pass = document.getElementById('loginPassword').value;
+        if (!uname || !pass) return showMsg("Kullanıcı adı ve şifre gerekli!", true);
+
+        fetch(`${API_BASE_URL}/adminauth/login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            body: JSON.stringify({ username: uname, password: pass })
+        })
+        .then(async res => {
+            const data = await res.json(); if (!res.ok) throw new Error(data.mesaj);
+            
+            // YENİ: Veriyi sekme kapanınca silinecek olan sessionStorage'a kaydediyoruz
+            sessionStorage.setItem("adminData", JSON.stringify({ 
+                token: data.token, 
+                universityName: data.universityName, 
+                username: data.username 
+            }));
+            
+            window.location.replace("admin.html");
+            
+        }).catch(err => showMsg("Giriş Başarısız: " + err.message, true));
+    }
+</script>
+</body>
+</html>

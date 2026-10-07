@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT. Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Darker+Grotesque:wght@500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #000000; --text-muted: #6c757d;
+            --primary: #f05800; --primary-hover: #cc4a00; --border-color: #dee2e6; --success: #28a745; --danger: #dc3545;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg-color: #121212; --card-bg: #1e1e1e; --text-main: #ffffff; --text-muted: #aaaaaa; --border-color: #333333; }
+        }
+        body { font-family: 'Darker Grotesque', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 40px 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 1200px; }
+        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; border-bottom: 2px solid var(--border-color); padding-bottom: 20px; }
+        .logo { font-size: 42px; font-weight: 900; letter-spacing: -1px; margin: 0; }
+        .logo span { color: var(--primary); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; }
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+        
+        h2 { font-size: 24px; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        label { display: block; font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-muted); }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--bg-color); color: var(--text-main); font-family: 'Darker Grotesque', sans-serif; font-size: 18px; font-weight: 700; box-sizing: border-box; margin-bottom: 15px; }
+        input:disabled { opacity: 0.6; cursor: not-allowed; background-color: var(--border-color); }
+        textarea { height: 150px; resize: vertical; }
+        button { background-color: var(--primary); color: white; border: none; padding: 12px 24px; font-size: 18px; font-weight: 700; border-radius: 6px; cursor: pointer; font-family: 'Darker Grotesque', sans-serif; transition: 0.2s; width: 100%; }
+        button:hover:not(:disabled) { background-color: var(--primary-hover); }
+        button:disabled { background-color: var(--text-muted); cursor: not-allowed; opacity: 0.5; }
+        .btn-outline { background-color: transparent; color: var(--danger); border: 2px solid var(--danger); }
+        .btn-outline:hover { background-color: var(--danger); color: white; }
+        
+        .info-text { font-size: 15px; color: var(--text-muted); margin-bottom: 15px; line-height: 1.4; }
+        .admin-badge { background-color: rgba(240, 88, 0, 0.1); color: var(--primary); padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 10px; }
+        .file-upload-wrapper { border: 2px dashed var(--primary); padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 15px; background-color: rgba(240, 88, 0, 0.05); }
+
+        /* TAKVİM TASARIMI */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .calendar-header button { width: auto; padding: 5px 15px; background-color: transparent; color: var(--primary); border: 1px solid var(--primary); }
+        .calendar-header button:hover:not(:disabled) { background-color: var(--primary); color: white; }
+        .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; color: var(--text-muted); margin-bottom: 8px; font-size: 14px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .cal-day { padding: 12px 0; text-align: center; border-radius: 6px; cursor: pointer; border: 2px solid transparent; font-weight: bold; font-size: 16px; background-color: var(--bg-color); transition: 0.2s; }
+        .cal-day:hover:not(.empty) { border-color: var(--primary); }
+        .cal-day.has-menu { background-color: var(--primary); color: white; }
+        .cal-day.selected { border-color: var(--text-main); transform: scale(1.05); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .cal-day.empty { background-color: transparent; cursor: default; }
+        /* YENİ: GEÇMİŞ GÜNLER TASARIMI */
+        .cal-day.past-day { opacity: 0.4; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="mainContainer" style="display: none;">
+    <div class="header">
+        <h1 class="logo">YT<span>.</span> Admin</h1>
+        <div class="admin-badge">
+            <span id="activeUniName">Yükleniyor...</span>
+            <button class="btn-outline" style="padding: 5px 10px; font-size: 14px; width: auto;" onclick="handleLogout()">Çıkış Yap</button>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>Sistem Ayarları</h2>
+            <p class="info-text">Fiyat sadece <b id="settingsUniName">sizin üniversiteniz</b> için değişir.</p>
+            <label>Güncel Menü Fiyatı (TL)</label>
+            <input type="number" id="priceInput" placeholder="Yükleniyor...">
+            <button onclick="updatePrice()">Fiyatı Güncelle</button>
+            <p class="info-text" style="margin-top: 15px;" id="priceMessage"></p>
+        </div>
+
+        <div class="card" style="grid-column: span 1;">
+            <h2>Takvim & Menü Yönetimi</h2>
+            
+            <!-- TAKVİM ALANI -->
+            <div class="calendar-header">
+                <button onclick="degistirAy(-1)">❮</button>
+                <h3 id="takvimBaslik" style="margin: 0; color: var(--text-main);">Yükleniyor...</h3>
+                <button onclick="degistirAy(1)">❯</button>
+            </div>
+            <div class="calendar-weekdays">
+                <span>Pzt</span><span>Sal</span><span>Çar</span><span>Per</span><span>Cum</span><span>Cmt</span><span>Paz</span>
+            </div>
+            <div class="calendar-grid" id="takvimGunleri"></div>
+
+            <p class="info-text" style="text-align: center; margin-top: 15px;">Menü eklemek veya güncellemek için takvimden bir güne tıklayın.</p>
+        </div>
+
+        <!-- FORM ALANI -->
+        <div class="card" id="menuFormAlani" style="opacity: 0.5; pointer-events: none;">
+            <h2 id="seciliTarihBaslik" style="color: var(--primary);">Menü Detayı</h2>
+            <input type="hidden" id="singleDate">
+            <label>Çorba</label>
+            <input type="text" id="singleSoup">
+            <label>Ana Yemek</label>
+            <input type="text" id="singleMain">
+            <label>Yardımcı Yemek</label>
+            <input type="text" id="singleSide">
+            <label>Tatlı</label>
+            <input type="text" id="singleDessert">
+            <label>İçecek</label>
+            <input type="text" id="singleDrink">
+            <label>Toplam Kalori</label>
+            <input type="number" id="singleCalorie" value="0">
+            <!-- YENİ: Butona ID eklendi -->
+            <button id="saveMenuBtn" onclick="addSingleMenu()">Menüyü Kaydet / Güncelle</button>
+            <p class="info-text" style="margin-top: 15px; font-weight: bold;" id="singleMessage"></p>
+        </div>
+
+        <div class="card" style="grid-column: 1 / -1;">
+            <h2>Aylık Menü Yükleme (Toplu Excel)</h2>
+            <div class="file-upload-wrapper">
+                <label style="cursor: pointer; color: var(--primary);">Excel Dosyası Seç (.xlsx)</label>
+                <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="handleExcelUpload(event)">
+            </div>
+            <p class="info-text" style="text-align: center; margin: 10px 0;">-- VEYA JSON YAPIŞTIR --</p>
+            <textarea id="bulkMenuInput" placeholder='[{ "date": "01-06-2026", "soup": "Mercimek" ... }]'></textarea>
+            <button onclick="uploadBulkMenu()" style="max-width: 300px; margin: 0 auto; display: block;">Listeyi Sisteme Yükle</button>
+            <p class="info-text" style="margin-top: 15px; text-align: center;" id="menuMessage"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const savedAdmin = sessionStorage.getItem("adminData");
+    if (!savedAdmin) window.location.replace("login.html");
+
+    const API_BASE_URL = 'http://localhost:5260/api';
+    let currentAdmin = JSON.parse(savedAdmin); 
+    
+    // TAKVİM DEĞİŞKENLERİ
+    let aktifTakvimTarihi = new Date();
+    let aylikMenuler = [];
+    const aylarIsim = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    let seciliGunDiv = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (currentAdmin) {
+            document.getElementById('mainContainer').style.display = "block";
+            initDashboard();
+        }
+    });
+
+    function handleLogout() {
+        sessionStorage.removeItem("adminData");
+        window.location.replace("login.html");
+    }
+
+    function initDashboard() {
+        document.getElementById('activeUniName').innerText = `🏢 ${currentAdmin.universityName} Paneli`;
+        document.getElementById('settingsUniName').innerText = currentAdmin.universityName;
+
+        fetch(`${API_BASE_URL}/settings/yemek-fiyati?university=${encodeURIComponent(currentAdmin.universityName)}`, {
+            headers: { 'Authorization': `Bearer ${currentAdmin.token}` }
+        })
+        .then(res => res.json())
+        .then(data => document.getElementById('priceInput').value = data.fiyat)
+        .catch(err => console.log("Fiyat çekilemedi", err));
+
+        takvimiYukle();
+    }
+
+    // --- TAKVİM FONKSİYONLARI ---
+    async function takvimiYukle() {
+        const yil = aktifTakvimTarihi.getFullYear();
+        const ay = aktifTakvimTarihi.getMonth() + 1;
+        document.getElementById('takvimBaslik').innerText = `${aylarIsim[ay-1]} ${yil}`;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/menu/aylik/${yil}/${ay}?university=${encodeURIComponent(currentAdmin.universityName)}`);
+            if(res.ok) {
+                aylikMenuler = await res.json();
+            } else {
+                aylikMenuler = [];
+            }
+        } catch(e) { aylikMenuler = []; }
+
+        takvimiCiz();
+    }
+
+    function takvimiCiz() {
+        const yil = aktifTakvimTarihi.getFullYear();
+        const ay = aktifTakvimTarihi.getMonth();
+        const ilkGun = new Date(yil, ay, 1).getDay(); 
+        const aydakiGunSayisi = new Date(yil, ay + 1, 0).getDate();
+        
+        const grid = document.getElementById('takvimGunleri');
+        grid.innerHTML = '';
+        
+        let baslangicBoslugu = ilkGun === 0 ? 6 : ilkGun - 1;
+
+        for(let i = 0; i < baslangicBoslugu; i++) {
+            grid.innerHTML += `<div class="cal-day empty"></div>`;
+        }
+
+        // Bugünün tarihini saat/dakika olmadan net olarak alıyoruz
+        const bugunGecici = new Date();
+        bugunGecici.setHours(0,0,0,0);
+
+        for(let d = 1; d <= aydakiGunSayisi; d++) {
+            const dateString = `${yil}-${String(ay+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const menuVarMi = aylikMenuler.some(m => m.date && m.date.startsWith(dateString));
+            
+            let className = "cal-day";
+            if(menuVarMi) className += " has-menu";
+            
+            // YENİ: Geçmiş günleri tespit edip stil ekliyoruz
+            const donguTarihi = new Date(yil, ay, d);
+            if(donguTarihi < bugunGecici) className += " past-day";
+            
+            grid.innerHTML += `<div class="${className}" onclick="tarihSec(${yil}, ${ay+1}, ${d}, this)">${d}</div>`;
+        }
+    }
+
+    function degistirAy(fark) {
+        aktifTakvimTarihi.setMonth(aktifTakvimTarihi.getMonth() + fark);
+        document.getElementById('menuFormAlani').style.opacity = "0.5";
+        document.getElementById('menuFormAlani').style.pointerEvents = "none";
+        document.getElementById('seciliTarihBaslik').innerText = "Menü Detayı";
+        takvimiYukle();
+    }
+
+    // YENİ: TARİH SEÇİMİNDE GEÇMİŞ GÜN KİLİDİ
+    function tarihSec(yil, ay, gun, divElement) {
+        if(seciliGunDiv) seciliGunDiv.classList.remove('selected');
+        seciliGunDiv = divElement;
+        seciliGunDiv.classList.add('selected');
+
+        const formAlani = document.getElementById('menuFormAlani');
+        formAlani.style.opacity = "1";
+        formAlani.style.pointerEvents = "auto";
+        
+        document.getElementById('singleDate').value = `${String(gun).padStart(2,'0')}-${String(ay).padStart(2,'0')}-${yil}`;
+        
+        const dateString = `${yil}-${String(ay).padStart(2,'0')}-${String(gun).padStart(2,'0')}`;
+        const menumuz = aylikMenuler.find(m => m.date && m.date.startsWith(dateString));
+        
+        if(menumuz) {
+            document.getElementById('singleSoup').value = menumuz.soup || "";
+            document.getElementById('singleMain').value = menumuz.mainDish || "";
+            document.getElementById('singleSide').value = menumuz.sideDish || "";
+            document.getElementById('singleDessert').value = menumuz.dessert || "";
+            document.getElementById('singleDrink').value = menumuz.drink || "";
+            document.getElementById('singleCalorie').value = menumuz.totalCalories || 0;
+        } else {
+            ['singleSoup','singleMain','singleSide','singleDessert','singleDrink'].forEach(id => document.getElementById(id).value = "");
+            document.getElementById('singleCalorie').value = "0";
+        }
+
+        // KİLİT MEKANİZMASI: Eğer seçilen gün geçmişse form kilitlenir
+        const bugunGecici = new Date();
+        bugunGecici.setHours(0,0,0,0);
+        const secilenTarih = new Date(yil, ay - 1, gun);
+        const isPast = secilenTarih < bugunGecici;
+
+        const inputs = ['singleSoup', 'singleMain', 'singleSide', 'singleDessert', 'singleDrink', 'singleCalorie'];
+        inputs.forEach(id => {
+            document.getElementById(id).disabled = isPast;
+        });
+        
+        document.getElementById('saveMenuBtn').disabled = isPast;
+
+        if (isPast) {
+            document.getElementById('seciliTarihBaslik').innerText = `🔒 ${gun} ${aylarIsim[ay-1]} Menüsü`;
+            document.getElementById('seciliTarihBaslik').style.color = "var(--text-muted)";
+            showMessage('singleMessage', "Geçmiş günlerin menüsü salt okunurdur, değiştirilemez.", true);
+        } else {
+            document.getElementById('seciliTarihBaslik').innerText = `✏️ ${gun} ${aylarIsim[ay-1]} Menüsü`;
+            document.getElementById('seciliTarihBaslik').style.color = "var(--primary)";
+            document.getElementById('singleMessage').innerText = "";
+        }
+    }
+
+    // --- DİĞER FONKSİYONLAR ---
+    function formatDateForAPI(dateVal) {
+        if (!dateVal) return dateVal;
+        if (!isNaN(dateVal) && typeof dateVal === 'number') {
+            const jsDate = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
+            let yyyy = jsDate.getFullYear();
+            let mm = String(jsDate.getMonth() + 1).padStart(2, '0');
+            let dd = String(jsDate.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+        let dateStr = dateVal.toString().trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+        const parts = dateStr.split(/[-./]/);
+        if (parts.length === 3) {
+            let p1 = parts[0].padStart(2, '0'); let p2 = parts[1].padStart(2, '0'); let p3 = parts[2];
+            if (p3.length === 2) p3 = "20" + p3;
+            return `${p3}-${p2}-${p1}`; 
+        }
+        return dateStr; 
+    }
+
+    function showMessage(elementId, text, isError = false) {
+        const el = document.getElementById(elementId);
+        el.innerText = text;
+        el.style.color = isError ? "var(--danger)" : "var(--success)";
+        setTimeout(() => el.innerText = "", 4000);
+    }
+
+    function updatePrice() {
+        const newPrice = document.getElementById('priceInput').value;
+        if (!newPrice || newPrice <= 0) return alert("Geçerli bir fiyat girin.");
+        fetch(`${API_BASE_URL}/settings/fiyat-guncelle`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAdmin.token}` }, 
+            body: JSON.stringify({ price: parseFloat(newPrice), universityName: currentAdmin.universityName })
+        }).then(res => res.json()).then(data => showMessage('priceMessage', data.mesaj))
+        .catch(err => showMessage('priceMessage', "Hata oluştu!", true));
+    }
+
+    function addSingleMenu() {
+        const rawDate = document.getElementById('singleDate').value.trim();
+        if (!rawDate) return showMessage('singleMessage', "Önce takvimden bir tarih seçmelisiniz!", true);
+
+        // Çift Dikiş Güvenlik: Kullanıcı HTML'i kurcalasa bile geçmiş güne JS üzerinden istek atılamaz
+        const parts = rawDate.split('-');
+        const selectedDate = new Date(parts[2], parts[1] - 1, parts[0]);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        if (selectedDate < today) {
+            return showMessage('singleMessage', "Hata: Geçmiş günlere menü eklenemez!", true);
+        }
+
+        const singleMenuData = [{
+            date: formatDateForAPI(rawDate),
+            soup: document.getElementById('singleSoup').value.trim(),
+            mainDish: document.getElementById('singleMain').value.trim(),
+            sideDish: document.getElementById('singleSide').value.trim(),
+            dessert: document.getElementById('singleDessert').value.trim(),
+            drink: document.getElementById('singleDrink').value.trim(),
+            totalCalories: parseInt(document.getElementById('singleCalorie').value) || 0,
+            universityName: currentAdmin.universityName 
+        }];
+
+        fetch(`${API_BASE_URL}/menu/toptan-ekle`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAdmin.token}` }, 
+            body: JSON.stringify(singleMenuData)
+        }).then(async res => {
+            const data = await res.json(); if (!res.ok) throw new Error(data.mesaj);
+            showMessage('singleMessage', "Menü başarıyla kaydedildi/güncellendi.");
+            takvimiYukle(); 
+        }).catch(err => showMessage('singleMessage', err.message, true));
+    }
+
+    function handleExcelUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: true });
+            document.getElementById('bulkMenuInput').value = JSON.stringify(jsonData, null, 2);
+            showMessage('menuMessage', "Excel okundu. Yüklemek için butona basın.");
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function uploadBulkMenu() {
+        const jsonText = document.getElementById('bulkMenuInput').value;
+        let menuData;
+        try { menuData = JSON.parse(jsonText); } catch (e) { return showMessage('menuMessage', "Hatalı JSON formatı!", true); }
+        if (!Array.isArray(menuData)) return showMessage('menuMessage', "Liste köşeli parantez içinde olmalı.", true);
+
+        const apiReadyData = menuData.map(item => ({
+            ...item,
+            date: formatDateForAPI(item.date),
+            universityName: currentAdmin.universityName
+        }));
+
+        fetch(`${API_BASE_URL}/menu/toptan-ekle`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAdmin.token}` }, 
+            body: JSON.stringify(apiReadyData)
+        }).then(async res => {
+            const data = await res.json(); if (!res.ok) throw new Error(data.mesaj);
+            showMessage('menuMessage', data.mesaj);
+            document.getElementById('bulkMenuInput').value = "";
+            document.getElementById('excelFile').value = ""; 
+            takvimiYukle();
+        }).catch(err => showMessage('menuMessage', err.message, true));
+    }
+</script>
+
+</body>
+</html>

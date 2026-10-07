@@ -1,0 +1,6 @@
+@YemekhaneApi_HostAddress = http://localhost:5260
+
+GET {{YemekhaneApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

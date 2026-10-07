@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Yemekhane Yönetim Paneli</title>
+</head>
+<body>
+
+    <h1>Yeni Menü Ekle</h1>
+    
+    <form id="menuForm">
+        <label>Tarih (Y-A-G):</label><br>
+        <input type="text" id="date" value="2026-03-29"><br><br>
+
+        <label>Çorba:</label><br>
+        <input type="text" id="soup"><br><br>
+
+        <label>Ana Yemek:</label><br>
+        <input type="text" id="mainDish"><br><br>
+
+        <label>Yardımcı Yemek (Pilav vb.):</label><br>
+        <input type="text" id="sideDish"><br><br>
+
+        <label>Tatlı:</label><br>
+        <input type="text" id="dessert"><br><br>
+
+        <label>İçecek:</label><br>
+        <input type="text" id="drink"><br><br>
+
+        <label>Toplam Kalori:</label><br>
+        <input type="number" id="totalCalories"><br><br>
+
+        <button type="button" onclick="menuEkle()">Sisteme Kaydet</button>
+    </form>
+
+    <script>
+        function menuEkle() {
+            const yeniMenu = {
+                date: document.getElementById('date').value,
+                soup: document.getElementById('soup').value,
+                mainDish: document.getElementById('mainDish').value,
+                sideDish: document.getElementById('sideDish').value,
+                dessert: document.getElementById('dessert').value,
+                drink: document.getElementById('drink').value,
+                totalCalories: parseInt(document.getElementById('totalCalories').value)
+            };
+
+            fetch('http://localhost:5260/api/menu', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(yeniMenu)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("Detaylı Menü başarıyla eklendi!");
+                document.getElementById('menuForm').reset();
+            })
+            .catch(error => alert("Hata: " + error));
+        }
+    </script>
+
+</body>
+</html>
